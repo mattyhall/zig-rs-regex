@@ -19,7 +19,7 @@ fn buildCrate(b: *std.build.Builder, mode: std.builtin.Mode, crate_path: []const
     res.* = .{
         .name = std.fs.path.basename(crate_path),
         .step = cmd,
-        .install_path = try std.fs.path.join(b.allocator, &.{crate_path, "target", mode_dir_name}),
+        .install_path = try std.fs.path.join(b.allocator, &.{ crate_path, "target", mode_dir_name }),
     };
     return res;
 }
@@ -33,6 +33,12 @@ fn linkCrate(b: *std.build.Builder, mode: std.builtin.Mode, step: anytype, crate
     step.linkLibCpp();
 }
 
+pub fn linkRe(b: *std.build.Builder, mode: std.builtin.Mode, step: anytype) void {
+    const cwd = std.fs.path.dirname(@src().file) orelse ".";
+    const crate_path = std.fs.path.join(b.allocator, &.{ cwd, "re" }) catch unreachable;
+    linkCrate(b, mode, step, crate_path) catch unreachable;
+}
+
 pub fn build(b: *std.build.Builder) void {
     // Standard release options allow the person running `zig build` to select
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
@@ -40,7 +46,7 @@ pub fn build(b: *std.build.Builder) void {
 
     const lib = b.addStaticLibrary("zig-rust-regex", "src/main.zig");
     lib.setBuildMode(mode);
-    linkCrate(b, mode, lib, "re") catch unreachable;
+    linkRe(b, mode, lib);
     lib.install();
 
     const main_tests = b.addTest("src/main.zig");
