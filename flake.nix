@@ -40,6 +40,7 @@
              gdb
              rustc
              cargo
+             rust-analyzer
            ]);
          };
       };
