@@ -35,9 +35,9 @@ pub extern "C" fn re_search(re: *const Re, buf: *const u8, buf_len: usize) -> Ma
         matches.push(Match { start: mat.start(), end: mat.end() });
     }
     matches.shrink_to_fit();
+    let matches = matches.leak();
     let (ptr, len) = (matches.as_ptr(), matches.len());
-    std::mem::forget(matches);
-    std::mem::forget(regex);
+    Box::leak(regex);
     Matches { ptr, len }
 }
 
