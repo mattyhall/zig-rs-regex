@@ -12,17 +12,35 @@ pub const Matches = struct {
     }
 };
 
-pub fn search(regex: []const u8, buf: []const u8) Matches {
-    const matches = c.re_search(regex.ptr, regex.len, buf.ptr, buf.len);
-    var ret: Matches = undefined;
-    ret.matches.ptr = matches.ptr;
-    ret.matches.len = matches.len;
-    return ret;
-}
+pub const Regex = struct {
+    re: *c.re_t,
+
+    pub fn init(regex: []const u8) error{could_not_compile}!Regex {
+        var r = c.re_compile(regex.ptr, regex.len);
+        if (r == null) return error.could_not_compile;
+        return Regex{ .re = r.? };
+    }
+
+    pub fn search(self: *Regex, buf: []const u8) Matches {
+        const matches = c.re_search(self.re, buf.ptr, buf.len);
+        var ret: Matches = undefined;
+        ret.matches.ptr = matches.ptr;
+        ret.matches.len = matches.len;
+        return ret;
+    }
+
+    pub fn deinit(self: *Regex) void {
+        c.re_free(self.re);
+    }
+};
 
 test "basic add functionality" {
-    var matches = search("foo", "foo bar baz");
+    var re = try Regex.init("foo");
+    defer re.deinit();
+
+    var matches = re.search("foo bar baz");
     defer matches.deinit();
+
     try std.testing.expectEqual(matches.matches.len, 1);
     try std.testing.expectEqualSlices(Match, matches.matches, &.{.{ .start = 0, .end = 3 }});
 }
